@@ -36,7 +36,8 @@ while cnt ~= 0
         ses = str2double(vpcode(5:6));
         
         mSub = [sub*ones(size(m,1),1) ses*ones(size(m,1),1) m];
-        fprintf(freaAll,'%i\t%i\t%i\t%i\t%.4f\t%i\t%i\t%i\t%.4f\t%i\t%.4f\t%.4f\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\n',mSub');
+        tab_format = strcat(repmat('%.4f\t', 1,size(mSub,2)-1), '%.4f\n');
+        fprintf(freaAll,tab_format,mSub');
         
         exsubject = subject;
     end

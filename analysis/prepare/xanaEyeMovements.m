@@ -45,6 +45,9 @@ scrCen    = [1920, 1200]/2;  % screen center (intial fixation position)
 DPP = pix2deg(MO_WIDE,MO_PHYS,ABSTAND,1); % degrees per pixel
 PPD = deg2pix(MO_WIDE,MO_PHYS,ABSTAND,1); % pixels per degree
 
+% display settings
+pixSixe = 4;
+
 % perform analysis
 anaEyeMovementsFilter;
 xcombineData;

@@ -48,6 +48,8 @@ while cnt ~= 0
                                 trial = str2double(char(la(4)));
                             case 'EVENT_FixationDot'
                                 tedfFix = str2double(char(la(2)));
+                            case 'EVENT_FixationDotOffset'
+                                tedfFixOff = str2double(char(la(2)));
                             case 'EVENT_TargetOnset'
                                 tedfTOn = str2double(char(la(2)));
                             case 'EVENT_Saccade1Started'
@@ -58,8 +60,8 @@ while cnt ~= 0
                                 trial2 = str2double(char(la(4)));
                             case 'TrialData'
                                 
-                                % 4 5     6       7      8         9         10  11  12         13         14      15      16      17   18  19   20   21    22
-                                % b trial td.side td.ecc td.tarDur td.sigma  cxm cym tar_loc(x) tar_loc(y) td.soa  mu_disp sd_disp tFix tOn tOff tSac sacRT td.n
+                                % 4 5     6       7      8         9         10  11  12         13         14      15      16      17   18  19   20   21   
+                                % b trial td.side td.ecc td.tarDur td.sigma  cxm cym tar_loc(x) tar_loc(y) td.soa  td.gap  PeakLum tFix tOn tOff tSac sacRT
                                 
                                 block  = str2double(char(la(4)));
                                 trial3 = str2double(char(la(5)));
@@ -72,8 +74,8 @@ while cnt ~= 0
                                 tarx   = str2double(char(la(12)));
                                 tary   = str2double(char(la(13)));
                                 soa    = str2double(char(la(14)));
-                                mu_disp  = str2double(char(la(15)));
-                                sd_disp  = str2double(char(la(16)));
+                                gap  = str2double(char(la(15)));
+                                PeakLum  = str2double(char(la(16)));
                                 
                                 tFix   = str2double(char(la(17))); 
                                 tOn    = str2double(char(la(18))); 
@@ -81,14 +83,8 @@ while cnt ~= 0
                                 tSac   = str2double(char(la(20)));
                                 sacRT  = str2double(char(la(21)));
                                 
-                                if length(la) > 21
-                                    n = str2double(char(la(22)));
-                                else
-                                    n= NaN;
-                                end
-                                
                                 stillTheSameTrial = 0;
-         
+                                
                         end
                     end
                 end
@@ -108,7 +104,7 @@ while cnt ~= 0
                 
                 % create uniform data matrix containing any potential
                 % information concerning a trial
-                tab = [tab; block trial3 side ecc tarDur sigma soa tFix tOn tOff tSac sacRT tedfTOn tedfSac tedfTOf tedfFix cxm cym tarx tary mu_disp sd_disp n];
+                tab = [tab; block trial3 side ecc tarDur sigma soa tFix tOn tOff tSac sacRT tedfTOn tedfSac tedfTOf tedfFix cxm cym tarx tary gap PeakLum tedfFixOff];
                 
             elseif trial~=trial2
                 fprintf(1,'\nMissing Message between TRIALID %i and trialData %i (ignore if last trial)',trial,trial2);

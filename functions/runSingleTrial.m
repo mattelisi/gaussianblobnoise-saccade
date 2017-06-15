@@ -100,6 +100,7 @@ end
 if td.gap > 0 % fixation disappear here if gap > 0
     Screen('DrawTexture', scr.main, bgtexture,[],[]);
     Screen('Flip', scr.main, tFlip_gap);
+    Eyelink('message', 'EVENT_FixationDotOffset');
 end
     
 %% stimuli / saccade phase
