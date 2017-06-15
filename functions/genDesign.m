@@ -28,8 +28,7 @@ design.deltaE = linspace(4/visual.ppd, 1.6, 6);
 
 % conditions
 design.condition_FE = [0]; % whether it is a fixed energy or constant peak condition
-
-peak_contrast = 1;
+peak_contrast = 1; % fraction of the maximum for each condition
 
 % this is actually a multiplier, ensure that peak luminance is at correct
 % level
@@ -53,6 +52,10 @@ design.soa = [500, 300]; % [min, jitter]
 design.iti = 0.3;
 design.preRelease = scr.fd/2;
 
+% saccae condition
+design.gap = [0 1];
+design.gap_dur = 0.18;
+
 %% saccade task
 design.maxRT = 0.6;
 
@@ -73,6 +76,7 @@ for bg = design.bgsigma
 for e = design.eccentricity
 for side = design.side
 for dur = design.dur
+for gap = design.gap
 
     t = t+1;
     
@@ -91,10 +95,12 @@ for dur = design.dur
     % trial(t).sigma = design.sigma_range(1) + rand(1) * (design.sigma_range(2) - design.sigma_range(1));
 
     trial(t).side = side;
+    trial(t).gap = design.gap_dur * gap;
     
     trial(t).fixLoc = [scr.centerX scr.centerY] + round(randn(1,2)*design.fixJtStd*visual.ppd);
     trial(t).soa = (design.soa(1) + rand*design.soa(2))/1000;
     
+end
 end
 end
 end

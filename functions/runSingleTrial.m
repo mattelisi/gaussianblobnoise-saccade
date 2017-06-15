@@ -84,9 +84,12 @@ end
 
 % random SoA before stimulus
 tFlip = tFix + td.soa;
+if td.gap > 0
+    tFlip_gap = tFix + td.soa - td.gap;
+end
 
 % fixation check
-while GetSecs < (tFix +td.soa - scr.fd)
+while GetSecs < (tFix +td.soa - scr.fd - td.gap)
     [x,y] = getCoord(scr, const); % get eye position data
     chkres = checkGazeAtPoint([x,y],[cxm,cym],chk);
     if ~chkres
@@ -94,6 +97,11 @@ while GetSecs < (tFix +td.soa - scr.fd)
     end
 end
 
+if td.gap > 0 % fixation disappear here if gap > 0
+    Screen('DrawTexture', scr.main, bgtexture,[],[]);
+    Screen('Flip', scr.main, tFlip_gap);
+end
+    
 %% stimuli / saccade phase
     
 % draw stimuli 
@@ -176,7 +184,7 @@ switch ex_fg
     case 0
         
         % collect trial information
-        trialData = sprintf('%i\t%.2f\t%.2f\t%i\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t',[td.side td.ecc td.tarDur td.sigma cxm cym tar_loc td.soa  NaN PeakLum]); 
+        trialData = sprintf('%i\t%.2f\t%.2f\t%i\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t',[td.side td.ecc td.tarDur td.sigma cxm cym tar_loc td.soa  td.gap PeakLum]); 
         
         % timing
         timeData = sprintf('%.2f\t%.2f\t%.2f\t%.2f',[tFix tOn tOff tSac]);
