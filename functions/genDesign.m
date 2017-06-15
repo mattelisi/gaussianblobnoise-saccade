@@ -27,7 +27,7 @@ design.side = [-1 1]; % side of the more distant target (+1 = right; -1 = left)
 design.deltaE = linspace(4/visual.ppd, 1.6, 6);
 
 % conditions
-design.condition_FE = [0]; % whether it is a fixed energy or constant peak condition
+design.condition_FE = [1 ]; % whether it is a fixed energy or constant peak condition
 peak_contrast = 1; % fraction of the maximum for each condition
 
 % this is actually a multiplier, ensure that peak luminance is at correct
