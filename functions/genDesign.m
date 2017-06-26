@@ -47,7 +47,7 @@ design.bgsigma = design.bg_RMScontrast/100 * 256;
 design.pixSixe = 4;
 
 %% timing
-design.dur = [0.15 0.6];
+design.dur = [0.05 0.15 0.6];
 design.soa = [500, 300]; % [min, jitter]
 design.iti = 0.3;
 design.preRelease = scr.fd/2;

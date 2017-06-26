@@ -106,7 +106,7 @@ for sess = 1:str2double(nsess)
         % use GSstreamer
         %Screen('Preference', 'DefaultVideocaptureEngine', 3)
         visual.imageRect = scr.rect;
-        const.moviePtr = Screen('CreateMovie', scr.main, movieName, scr.xres, scr.yres, 60);
+        const.moviePtr = Screen('CreateMovie', scr.main, movieName, scr.xres, scr.yres, 60, ':CodecType=x264enc :CodecSettings= Videoquality=1');
 
     end
     
