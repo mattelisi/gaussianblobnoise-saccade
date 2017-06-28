@@ -100,6 +100,7 @@ end
 if td.gap > 0 % fixation disappear here if gap > 0
     Screen('DrawTexture', scr.main, bgtexture,[],[]);
     Screen('Flip', scr.main, tFlip_gap);
+    Eyelink('message', 'EVENT_FixationDotOffset');
 end
     
 %% stimuli / saccade phase
@@ -112,7 +113,7 @@ Eyelink('message', 'EVENT_TargetOnset');
 if const.TEST>0; fprintf(1,strcat('\n','EVENT_TargetOnset')); end
 
 % prepare offscreen 
-drawFixation(visual.fixCol,[cxm cym],scr,visual);
+% drawFixation(visual.fixCol,[cxm cym],scr,visual);
 tFlip = tOn + td.tarDur;
 
 if const.saveMovie

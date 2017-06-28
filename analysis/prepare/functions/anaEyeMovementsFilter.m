@@ -1,0 +1,501 @@
+%% eye movement analysis
+%
+% gaussian-blob-noise
+
+%% prepare files to store the results
+if welche == 1
+    reaAllFile = sprintf('../rea/AllSubjects_V%iD%iT%iS%i.rea',velSD,minDur,VELTYPE,SAMPRATE);
+    reaAllFile_R = sprintf('../R/AllSubjects_V%iD%iT%iS%i.txt',velSD,minDur,VELTYPE,SAMPRATE);
+    btrAllFile = sprintf('../btr/AllSubjects_V%iD%iT%iS%i.btr',velSD,minDur,VELTYPE,SAMPRATE);
+    
+    freaAll = fopen(reaAllFile,'w');
+    fbtrAll = fopen(btrAllFile,'w');
+    fRAll = fopen(reaAllFile_R,'w');
+    
+    % vpcode,vp,str2num(sessionDir)
+    % block trial3 side ecc tarDur sigma soa tFix tOn tOff tSac sacRT tedfTOn tedfSac tedfTOf tedfFix cxm cym tarx tary gap PeakLum tedfFixOff
+    % sacRT reaSacNumber sacType sacOnset sacOffset sacDur sacVPeak sacDist sacAngle1 sacAmp sacAngle2 sacxOnset sacyOnset sacxOffset sacyOffset
+    
+    fprintf(fRAll, 'vpcode\tvp\tsession\tblock\ttrial3\tside\tecc\ttarDur\tsigma\tsoa\ttFix\ttOn\ttOff\ttSac\tsacRT\ttedfTOn\ttedfSac\ttedfTOf\ttedfFix\tcxm\tcym\ttarx\ttary\tgap\tPeakLum\ttedfFixOff\t'); 
+    fprintf(fRAll, 'sacRT\treaSacnumber\tsacType\tsacOnset\tsacOffset\tsacDur\tsacVPeak\tsacDist\tsacAngle1\tsacAmp\tsacAngle2\t'); 
+    fprintf(fRAll, 'sacxOnset\tsacyOnset\tsacxOffset\tsacyOffset\n'); 
+    
+    sfid = fopen('subjects.all','r');
+else
+    sfid = fopen('subjects.tmp','r');
+end
+
+%% prepare figures and axes (if plotting is required)
+if plotData
+    
+    cout = [0.3 0.3 0.3];
+    cbac = [1.0 1.0 1.0];
+    
+    close all;
+    h1 = figure;
+    set(gcf,'pos',[50 50 1500 500],'color',cbac);
+    ax(1) = axes('pos',[0 0 0.33333 1]);    % left bottom width height
+    ax(2) = axes('pos',[0.35 0.5 0.5 0.5]);
+    ax(3) = axes('pos',[0.35 0.0 0.5 0.5]);
+     
+end
+
+%% this are the colum names of the TAB file that identify the variables
+%
+% 1     2      3    4   5      6        7     8   9    10   11    12      13
+% block trial3 side ecc tarDur contrast sigma soa tFix tOn  tOff  tSac    sacRT
+% block trial3 side ecc tarDur sigma    soa  tFix tOn  tOff tSac  sacRT   tedfTOn
+%
+% 14      15      16      17      18   19   20   21   22      23
+% tedfTOn tedfSac tedfTOf tedfFix cxm  cym  tarx tary
+% tedfSac tedfTOf tedfFix cxm     cym  tarx tary gap  PeakLum tedfFixOff
+
+
+%% analysis (loop over all trials)
+
+ntGoodAll = 0;
+ntBadAll = 0;
+vp = 0;
+cnt = 1;
+while cnt ~= 0  % per tutti i soggetti
+    [vpcode, cnt] = fscanf(sfid,'%s',1);
+    if cnt ~= 0
+        vp = vp + 1;
+        
+        % create file strings
+        tabfile = sprintf('../tab/%s.tab',vpcode);
+        datfile = sprintf('../raw/%s.dat',vpcode);
+        reafile = sprintf('../rea/%s_V%iD%iT%iS%i.rea',vpcode,velSD,minDur,VELTYPE,SAMPRATE);
+        btrfile = sprintf('../btr/%s_V%iD%iT%iS%i.btr',vpcode,velSD,minDur,VELTYPE,SAMPRATE);
+        
+        % check if subject .mat files are available
+        if ~exist(tabfile,'file')
+            fprintf(1,'\n\ttab file %s not found!',tabfile);
+        end
+        if ~exist(datfile,'file')
+            fprintf(1,'\n\ttab file %s not found!',datfile);
+        end
+        
+        fprintf(1,'\n\n\tloading %s ...',vpcode);
+        
+        % load tab and dat files
+        tab = load(tabfile);
+        dat = load(datfile);
+        
+        % load experimental design specifications
+        subDir=substr(vpcode, 0, 4);
+        sessionDir=substr(vpcode, 5, 2);
+        designfile = sprintf('../../data/%s/%s/%s.mat',subDir,sessionDir,vpcode);
+        load(designfile);
+        pixSixe = design.pixSixe;
+        
+        % prepare output files
+        fprintf(1,' preparing\n');
+        frea = fopen(reafile,'w');
+        fbtr = fopen(btrfile,'w');
+        
+        % counting variables
+        nt   = 0;   % number of trials
+        ntGood=0;   % number of good trials
+        
+        % exclusion criteria (for up to 100 response saccades)
+        ex.sbrs = zeros(1,100);   % saccades > 1 deg before response saccade
+        ex.mbrs = zeros(1,100);   % Missing before saccade (blinks)
+        ex.nors = zeros(1,100);   % no response saccade
+        ex.samp = zeros(1,  1);   % sampling rate error
+        
+        
+        %% loop over trials
+        for t = 1:size(tab,1) % per ogni trial
+            nt = nt + 1;
+            
+            % load relevant variables from tab file
+            block = tab(t,1);
+            trial = tab(t,2);
+            side = tab(t,3);
+            ecc = tab(t,4);
+            soa = tab(t,7) * 1000;
+            
+            % get edf timing information from the tab file
+            tFixOnEDF = tab(t,16);
+            tedfTOn = tab(t,13);
+            
+            % load trial specifications
+            % td = design.b(block).trial(trial);
+            
+            % fixation and target position 
+            fixPos = DPP * ([tab(t,17) tab(t,18)] -scrCen) .* [1 -1];
+            tarPos = DPP * ([tab(t,19) tab(t,20)]*pixSixe -scrCen) .* [1 -1];
+            tarPos = [fixPos; tarPos];
+            
+            nRS = size(tarPos,1)-1;     % nRS is 0 if no saccade required
+            
+            % reset all rejection criteria
+            if nRS > 0
+                sbrs = zeros(1,nRS);
+                mbrs = zeros(1,nRS);
+                resp = zeros(1,nRS);
+                samp = zeros(1,1);
+            else
+                sbrs = zeros(1,1);
+                mbrs = zeros(1,1);
+                resp = zeros(1,1);
+                samp = zeros(1,1);
+            end
+            
+            %% Primary response saccade analysis
+            
+            % get data in response time interval
+            idxrs = find(dat(:,1)>=tFixOnEDF & dat(:,1)<=tFixOnEDF+soa+maxRT);
+            timers = dat(idxrs,1);	% time stamp
+            
+            % determine sampling rate (differs across
+            % trials if something went wrong)
+            if ~mod(length(timers),2)   % delete last sample if even number
+                timers(end) = [];
+                idxrs(end)  = [];
+            end
+            samrat = round(1000/mean(diff(timers)));
+            minsam = minDur*samrat/1000;
+            
+            if 0 %samrat<SAMPRATE
+                samp = 1;
+                ex.samp = ex.samp+1;
+            end
+            
+            xrsf = DPP*([dat(idxrs,2)-scrCen(1), (scrCen(2)-dat(idxrs,3))]);    % positions (anche qua inverto coord verticali)
+            
+            % filter eye movement data
+            clear xrs;
+            xrs(:,1) = filtfilt(fir1(35,0.05*SAMPRATE/samrat),1,xrsf(:,1));
+            xrs(:,2) = filtfilt(fir1(35,0.05*SAMPRATE/samrat),1,xrsf(:,2));
+            
+            % compute saccade parameters
+            vrs = vecvel(xrs, samrat, VELTYPE);    % velocities
+            vrsf= vecvel(xrsf, samrat, VELTYPE);   % velocities
+            mrs = microsaccMerge(xrsf,vrsf,velSD,minsam,mergeInt);  % saccades
+            mrs = saccpar(mrs);
+            
+            % esclude microsasccades (amplitude smaller than cut off maxMSAmp)
+            if size(mrs,1)>0
+                amp = mrs(:,7);
+                mrs = mrs(amp>maxMSAmp,:);
+            end
+            nSac = size(mrs,1);
+            
+%             %% Saccade deviation
+%             if size(mrs,1)>=1
+%                 X=xrsf(mrs(1,1):mrs(1,2),1);
+%                 Y=xrsf(mrs(1,1):mrs(1,2),2);
+%                 
+%                 X_v = vrsf(mrs(1,1):mrs(1,2),1);
+%                 Y_v = vrsf(mrs(1,1):mrs(1,2),2);
+%                 
+%                 
+%                     [curvature1, curvature2 , curvatureFit] = saccDeviation_3rd(X,Y);
+%                     
+%                     % store maximum curvature locations for plot
+%                     xc1s = [xc1s, curvatureFit.xc1];
+%                     xc2s = [xc2s, curvatureFit.xc2];
+%                     
+%                     % store eyes' speed at curvature points & curvature locations rescaled in 0:1
+%                     xc1L = (curvatureFit.xc1+1)/2;
+%                     xc2L = (curvatureFit.xc2+1)/2;
+%                     
+%                     if abs(xc1L)<1 && (xc1L)>0 && round(real(xc1L)*length(X_v))>=1
+%                         Vc1_x = X_v(round(real(xc1L)*length(X_v))); % take only the real part
+%                         Vc1_y = Y_v(round(real(xc1L)*length(Y_v))); % take only the real part
+%                         Vc1 = [Vc1_x Vc1_y];
+%                     else
+%                         Vc1 = [NaN NaN];
+%                     end
+%                     
+%                     if abs(xc2L)<1 && (xc2L)>0  && round(real(xc2L)*length(X_v))>=1
+%                         Vc2_x = X_v(round(real(xc2L)*length(X_v)));
+%                         Vc2_y = Y_v(round(real(xc2L)*length(Y_v)));
+%                         Vc2 = [Vc2_x Vc2_y];
+%                     else
+%                         Vc2 = [NaN NaN];
+%                     end
+%                     
+%                     curvatureData = [curvature1, curvature2, xc1L, xc2L, Vc1, Vc2, curvatureFit.R2];
+%                     
+%                 if plotData
+%                     
+%                     % plot curvature
+%                     figure(h5);
+%                     
+%                     plot(curvatureFit.Xh_n, curvatureFit.Yh,'color',[0.6 0.6 0.6],'linewidth',2);    hold on
+%                     plot(curvatureFit.Xh_n, curvatureFit.predicted,'color',[0 0 0],'linewidth',1);  hold off
+%                     xlim([-1.5 1.5]);
+%                     ylim([-3 3]);
+%                     ylabel('curvature [deg]')
+%                     xlabel('normalized amplitude')
+%                     
+%                     % legend(pl,num2str(dTs),'Location','NorthEastOutside');
+%                     text(-1.2,-2,sprintf('1st curvature: %.2f \n 2nd curvature: %.2f \n (R-squared: %.2f)',curvature1, curvature2, curvatureFit.R2),'Fontsize',10,'hor','left','ver','bottom');
+%                     
+%                 end
+%             else
+%                 curvatureData = [NaN NaN NaN NaN NaN NaN NaN];
+%             end
+            
+            %% PLOT TRACES
+            
+            if plotData
+                
+                figure(h1);
+                
+                axes(ax(1));
+                hold off;
+                
+                % big circle
+                plot(0,0,'ko','color',[1 1 1],'markersize',10*PPD,'linewidth',1);
+                %xlim([-18 18]);
+                %ylim([-18 18]);
+                hold on;
+                
+                % fixation area
+                plot(tarPos(1,1),tarPos(1,2),'ko','color',[0.5 0.5 0.5],'MarkerFaceColor',[1 1 1],'markersize',(2.6*PPD)/2,'linewidth',1);
+                
+                % trajectory
+                plot(tarPos(2,1),tarPos(2,2),'.','color',[0.9 0.9 0.9],'markersize',20);
+                
+                sxrs = smoothdata(xrs);
+                plot(sxrs(:,1),sxrs(:,2),'k-','color',[0.5 0.5 0.5]);
+                % plot(xrsf(:,1),xrsf(:,2),'k-','color',[0.5 0.5 0.5]);
+               
+                for i = 1:size(mrs,1)
+                    plot(sxrs(mrs(i,1):mrs(i,2),1),sxrs(mrs(i,1):mrs(i,2),2),'r-','linewidth',2);
+                end
+                if ~isempty(mrs)
+                    plot([sxrs(mrs(:,1),1) sxrs(mrs(:,2),1)]',[sxrs(mrs(:,1),2) sxrs(mrs(:,2),2)]','r.');
+                end
+                
+                axes(ax(2));
+                plot(timers-tedfTOn,vrsf(:,1),'k-','color',[0.6 0.6 0.6]);
+                hold on;
+                for i = 1:size(mrs,1)
+                    plot(timers(mrs(i,1):mrs(i,2))-tedfTOn,vrsf(mrs(i,1):mrs(i,2),1)','r-','linewidth',2);
+                end
+                hold off;
+                xlim(timers([1 end])-tedfTOn);
+                ylim([-1000 1000]);
+                
+                axes(ax(3));
+                plot(timers-tedfTOn,vrsf(:,2),'k-','color',[0.6 0.6 0.6]);
+                hold on;
+                for i = 1:size(mrs,1)
+                    plot(timers(mrs(i,1):mrs(i,2))-tedfTOn,vrsf(mrs(i,1):mrs(i,2),2)','r-','linewidth',2);
+                end
+                hold off;
+                xlim(timers([1 end])-tedfTOn);
+                ylim([-1000 1000]);
+                
+            end
+            
+            
+            %%
+            % loop over all necessary response saccades
+            % (check if start and end position are within acceptables boundaries)
+            % - only ofr start position
+            s = 0;
+            for rs = 1:nRS
+                fixRec = repmat(tarPos(rs  ,:),1,2)+[-tarRad -tarRad tarRad tarRad];
+                tarRec = repmat(tarPos(rs+1,:),1,2)+4*[-tarRad -tarRad tarRad tarRad];
+                
+                % check for response saccade
+                reaSacNumber = 0;
+                if s<nSac
+                    while ~resp(rs) && s<nSac
+                        s = s+1;
+                        onset = timers(mrs(s,1))-tedfTOn;
+                        xBeg  = xrs(mrs(s,1),1);    % initial eye position x
+                        yBeg  = xrs(mrs(s,1),2);	% initial eye position y
+                        xEnd  = xrs(mrs(s,2),1);    % final eye position x
+                        yEnd  = xrs(mrs(s,2),2);	% final eye position y
+                        
+                        % is saccade out of fixation area?
+                        if ~resp(rs)
+                            fixedFix = isincircle(xBeg,yBeg,fixRec);
+                            fixedTar = isincircle(xEnd,yEnd,tarRec);
+                            if fixedTar && fixedFix
+                                reaSacNumber = s;   % which saccade after cue went to target
+                                reaLoc = fixedTar;  % which target location did saccade go to (if multiple)
+                                resp(rs) = 1;
+                            end
+                        end
+                        
+                        %%
+                        if plotData
+                            axes(ax(1));
+                            if resp(rs)
+                                plot([xBeg xEnd],[yBeg yEnd],'ko','color',[0 0 0],'markersize',8,'linewidth',2);
+                            end
+                        end
+                        %%
+                    end
+                end
+                
+                if ~resp(rs)
+                    ex.nors(rs) = ex.nors(rs) + 1;
+                    
+                    sacType    = 0;    % 0 = no response; 1 = microsaccade; 2 = large saccade; 3 = no saccade task
+                    sacOnset   = NaN;
+                    sacOffset  = NaN;
+                    sacDur     = NaN;
+                    sacVPeak   = NaN;
+                    sacDist    = NaN;
+                    sacAngle1  = NaN;
+                    sacAmp     = NaN;
+                    sacAngle2  = NaN;
+                    sacxOnset  = NaN;
+                    sacyOnset  = NaN;
+                    sacxOffset = NaN;
+                    sacyOffset = NaN;
+                    sacRT      = NaN;
+                else
+                    % compile reaSac data
+                    sacType    = rs+1; % 0 = no response; 1 = microsaccade; 2 = large saccade; 3 = second large saccade
+                    sacOnset   = mrs(reaSacNumber,1)-tedfTOn; % start-screen-geloggt
+                    sacOffset  = mrs(reaSacNumber,2)-tedfTOn; % start-screen-geloggt
+                    sacDur     = mrs(reaSacNumber,3)*1000/samrat;
+                    sacVPeak   = mrs(reaSacNumber,4);
+                    sacDist    = mrs(reaSacNumber,5);
+                    sacAngle1  = mrs(reaSacNumber,6);
+                    sacAmp     = mrs(reaSacNumber,7);
+                    sacAngle2  = mrs(reaSacNumber,8);
+                    sacxOnset  = xrs(mrs(reaSacNumber,1),1);
+                    sacyOnset  = xrs(mrs(reaSacNumber,1),2);
+                    sacxOffset = xrs(mrs(reaSacNumber,2),1);
+                    sacyOffset = xrs(mrs(reaSacNumber,2),2);
+                    
+                    if rs>1
+                        sacRT = sacOnset-reaSac(rs-1,5);
+                    else
+                        sacRT = sacOnset;
+                    end
+                end
+                
+                reaSac(rs,:) = [sacRT reaSacNumber sacType sacOnset sacOffset sacDur, ...
+                    sacVPeak sacDist sacAngle1 sacAmp sacAngle2 sacxOnset, ...
+                    sacyOnset sacxOffset sacyOffset];
+                
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % saccades before current response saccade %
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                if reaSacNumber>rs
+                    sbrs(rs) = 1;
+                    ex.sbrs(rs) = ex.sbrs(rs)+1;
+                end
+                
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % missings before current response saccade %
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                if resp(rs)
+                    rt = sacRT;
+                    if rs == 1
+                        t1 = tedfTOn-timBefCue;
+                        t2 = tedfTOn+sacRT+sacDur;
+                    else
+                        t1 = tedfTOn+reaSac(rs-1,5);
+                        t2 = t1+sacRT+sacDur;
+                    end
+                    
+                    % get index for current data period
+                    idx  = find(dat(:,1)>=t1 & dat(:,1)<t2);
+                    
+                    % check for missing data
+                    idxmbrs = find(dat(idx,crit_cols)==-1);
+                    if ~isempty(idxmbrs) 
+                        if mean(mean(dat(idx,crit_cols)==-1))>maxMiss
+                            mbrs(rs) = 1;
+                            ex.mbrs(rs) = ex.mbrs(rs) + 1;
+                        end
+                    end
+                end
+            end
+            
+            %%
+            if plotData
+                axes(ax(1));
+                hold on;
+                xlim([-18 18]);
+                ylim([-18 18]);
+                text(-14,14,sprintf('%s',substr(vpcode, 3, 2)),'Fontsize',14,'hor','left','ver','bottom');
+                text(-14,-14,sprintf('Trial %i (b. %i)',trial,block),'Fontsize',14,'hor','left','ver','bottom');
+                
+                condStr = 'Saccade';
+                
+                if sum(sbrs)==0 && sum(mbrs)==0 && sum(resp)==nRS % && samp==0
+                    text(0,-14,sprintf('%s: good',condStr),'Fontsize',14,'hor','center','ver','bottom');
+                else
+                    text(0,-14,sprintf('%s: bad',condStr),'Fontsize',14,'hor','center','ver','bottom');
+                end
+                
+                set(gca,'visible','off');
+                
+                % export image
+                if printImages
+                    o = input('\n   Save image? [y / n]? ','s');
+                    if strcmp(o,'y')
+                        exportfig(h1,sprintf('%s_trial%i.%i.eps',substr(vpcode, 3, 2), block, trial),'bounds','tight','color','rgb','LockAxes',0);
+                    end
+                end
+                
+                if waitforbuttonpress
+                    plotData = 1;
+                    % pause;
+                    
+                end
+                cla;
+            end
+            %% end % this would be the end for if ~samp
+            
+            % evaluate rejection criteria
+            if sum(sbrs)==0 && sum(mbrs)==0 && sum(resp)==nRS % && samp==0
+                rea = [repmat(tab(t,:),nRS,1) reaSac];
+                rea_format = strcat(repmat('%.4f\t', 1,length(rea)-1), '%.4f\n');
+                
+                fprintf(frea,rea_format,rea);
+                
+                if welche == 1
+                    
+                    fprintf(fRAll,  strcat('%s\t%i\t%i\t',rea_format),vpcode,vp,str2num(sessionDir),rea);
+                    
+                    rea = [vp*ones(size(rea,1),1), rea];
+                    fprintf(freaAll,strcat('%i\t',rea_format),rea);
+                end
+                ntGood = ntGood + 1;
+                ntGoodAll = ntGoodAll + 1;
+            else
+                ntBadAll = ntBadAll + 1;
+            end
+            fprintf(fbtr,'%i\t%i\t%i\t%i\t%i\t%i\n',tab(t,1),tab(t,2),sbrs,mbrs,~resp,samp);
+        end
+        fclose(frea);
+        fclose(fbtr);
+        
+        fprintf(1,'\t Tot. subject trials:\t\t%i\n\t GoodTrials :\t\t%i\n\t Samp. error:\t\t%i\n',nt,ntGood,ex.samp);
+        for rs = 1:nRS
+            fprintf(1,'\t Response saccade %i:\n\t  SacBefCue :\t\t%i\n\t  MisBefSac :\t\t%i\n\t  NoSaccade :\t\t%i\n',rs,ex.sbrs(rs),ex.mbrs(rs),ex.nors(rs));
+        end
+
+        if welche == 1
+            fprintf(fbtrAll,'%s\t%i\t%i\t%i',vpcode,nt,ntGood,ex.samp);
+            for rs = 1:nRS
+                fprintf(fbtrAll,'\t%i\t%i\t%i',ex.sbrs(rs),ex.mbrs(rs),ex.nors(rs));
+            end
+            fprintf(fbtrAll,'\n');
+        end
+    end
+end
+fclose(sfid);
+
+if welche == 1
+    fclose(fbtrAll);
+    fclose(freaAll);
+    fclose(fRAll);
+end
+
+fprintf(1,'\n\nTotal came %i good trials out of %i total trials!',ntGoodAll,ntGoodAll+ntBadAll);

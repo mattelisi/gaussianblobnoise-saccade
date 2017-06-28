@@ -3,11 +3,11 @@ function [] = run_all_analyses()
 
 % move edf files
 current_dir = pwd;
-destination_dir = '/Users/matteo/Dropbox/works 2017/city/blobcloud-saccade/analysis/edf';
+destination_dir = '/Users/matteo/Dropbox/works 2017/city/gaussianblobnoise-saccade/analysis/edf';
 nameFolds = listSubFolders;
 
-s_all = fopen('/Users/matteo/Dropbox/works 2017/city/blobcloud-saccade/analysis/prepare/subjects.all','w');
-s_tmp = fopen('/Users/matteo/Dropbox/works 2017/city/blobcloud-saccade/analysis/prepare/subjects.tmp','w');
+s_all = fopen('/Users/matteo/Dropbox/works 2017/city/gaussianblobnoise-saccade/analysis/prepare/subjects.all','w');
+s_tmp = fopen('/Users/matteo/Dropbox/works 2017/city/gaussianblobnoise-saccade/analysis/prepare/subjects.tmp','w');
 
 x = '/*.edf';
 for i=1:length(nameFolds)
@@ -27,7 +27,7 @@ cd(destination_dir);
 ! sh prepare.sh
 
 % run eye movememnt analyses
-cd('/Users/matteo/Dropbox/works 2017/city/blobcloud-saccade/analysis/prepare');
+cd('/Users/matteo/Dropbox/works 2017/city/gaussianblobnoise-saccade/analysis/prepare');
 xmsg2tab;
 xanaEyeMovements;
 
