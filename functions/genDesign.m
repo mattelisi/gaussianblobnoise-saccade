@@ -40,7 +40,7 @@ design.contrast_CP = ((design.min_sigma^2) / (max(design.sigmas_deg)^2) +1)/2;
 design.contrast_CP = 0.4; % design.contrast_CP * peak_contrast;
 
 % set the level of background noise
-design.bg_RMScontrast = 10; % percentage
+design.bg_RMScontrast = 10; % percentage of
 design.bgsigma = design.bg_RMScontrast/100 * 256; 
 
 % size of displayed pixel in screen pixels
