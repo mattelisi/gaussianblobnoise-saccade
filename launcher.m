@@ -9,8 +9,8 @@ addpath('functions/');
 home;
 
 %% general parameters
-const.TEST        = 1;      % 1 = test in dummy mode, 0 = test in eyelink mode
-const.gammaLinear = 0;      % use monitor linearization
+const.TEST        = 0;      % 1 = test in dummy mode, 0 = test in eyelink mode
+const.gammaLinear = 1;      % use monitor linearization
 const.saveMovie   = 0;
 const.nTrialMovie = 5;
 
