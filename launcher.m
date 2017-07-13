@@ -98,7 +98,7 @@ for sess = 1:str2double(nsess)
     visual = prepStim(scr, const);
     
     % generate design
-    design = genDesign(visual, scr);
+    design = genDesign(visual, scr, sess, str2double(substr(vpcode, 0, 2)));
     
     % prepare movie
     if const.saveMovie
