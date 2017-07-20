@@ -53,7 +53,8 @@ currentDir = cd;
 nsess = getTaskInfo;
 
 
-for sess = str2double(substr(vpcode, 5, 2)):(str2double(substr(vpcode, 5, 2))+str2double(nsess))
+%for sess = str2double(substr(vpcode, 5, 2)):(str2double(substr(vpcode, 5, 2))+str2double(nsess)-1)
+for sess = 1:str2double(nsess)
     
     cd(currentDir);
     
@@ -98,7 +99,7 @@ for sess = str2double(substr(vpcode, 5, 2)):(str2double(substr(vpcode, 5, 2))+st
     visual = prepStim(scr, const);
     
     % generate design
-    design = genDesign(visual, scr, sess, str2double(substr(vpcode, 0, 2)));
+    design = genDesign(visual, scr, actualSess, str2double(substr(vpcode, 0, 2)));
     
     % prepare movie
     if const.saveMovie
