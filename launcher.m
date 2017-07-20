@@ -53,7 +53,7 @@ currentDir = cd;
 nsess = getTaskInfo;
 
 
-for sess = 1:str2double(nsess)
+for sess = str2double(substr(vpcode, 5, 2)):(str2double(substr(vpcode, 5, 2))+str2double(nsess))
     
     cd(currentDir);
     
