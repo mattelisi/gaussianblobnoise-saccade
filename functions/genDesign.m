@@ -1,4 +1,4 @@
-function design = genDesign(visual,scr)
+function design = genDesign(visual,scr, sess, sjnum)
 %
 % location uncertainty v1.1 - gaussian blobs - saccade task
 %
@@ -6,8 +6,20 @@ function design = genDesign(visual,scr)
 % 
 
 %% display parameters
-design.eccentricity = [8 9 10 11 12];
-
+% design.eccentricity = [8 9 10 11 12];
+if mod(sjnum,2)
+    if mod(sess,2)
+        design.eccentricity = [10 11 12];
+    else
+        design.eccentricity = [8 9 10];
+    end
+else
+    if mod(sess,2)==0 % revers session order for even sjs number
+        design.eccentricity = [10 11 12];
+    else
+        design.eccentricity = [8 9 10];
+    end
+end
 %% target parameters
 design.min_sigma = 0.3;
 design.sigma_range_deg = [design.min_sigma, 1.5];
@@ -20,14 +32,18 @@ for s = 1:4
 end
 design.sigmas = visual.ppd * design.sigmas_deg;
 
+%% limit sigma conditions
+design.sigmas_deg = linspace(design.sigmas_deg(1),design.sigmas_deg(end),3);
+design.sigmas = linspace(design.sigmas(1),design.sigmas(end),3);
+
 % uniform within range
 % design.sigma_range = visual.ppd * design.sigma_range_deg;
 
 design.side = [-1 1]; % side of the more distant target (+1 = right; -1 = left)
-design.deltaE = linspace(4/visual.ppd, 1.6, 6);
+% design.deltaE = linspace(4/visual.ppd, 1.6, 6);
 
 % conditions
-design.condition_FE = [1 ]; % whether it is a fixed energy or constant peak condition
+design.condition_FE = [1]; % whether it is a fixed energy or constant peak condition
 peak_contrast = 1; % fraction of the maximum for each condition
 
 % this is actually a multiplier, ensure that peak luminance is at correct
@@ -47,13 +63,13 @@ design.bgsigma = design.bg_RMScontrast/100 * 256;
 design.pixSixe = 4;
 
 %% timing
-design.dur = [0.05 0.15 0.6];
+design.dur = [0.5];
 design.soa = [500, 300]; % [min, jitter]
 design.iti = 0.3;
 design.preRelease = scr.fd/2;
 
-% saccae condition
-design.gap = [0 1];
+% saccade condition
+design.gap = [0];
 design.gap_dur = 0.18;
 
 %% saccade task
@@ -62,7 +78,7 @@ design.maxRT = 0.6;
 %% exp structure
 design.nBlocks = 6;
 design.totSession = 1;
-design.rep = 5;
+design.rep = 16;
 
 %% other
 design.fixJtStd = 0.2;
