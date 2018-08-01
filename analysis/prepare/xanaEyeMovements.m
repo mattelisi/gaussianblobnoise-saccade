@@ -23,8 +23,8 @@ plotData  = 0;          % show figure with raw data
 printImages = 0;
 
 SAMPRATE  = 1000;       % Eyetracker sampling rate 
-maxRT     = 1000;       % time window for corrective saccades
-timBefCue = 300;        % time window to be analysed before saccade cue
+maxRT     = 900;        % time window for corrective saccades
+timBefCue = 300;        % time window to be analysed before saccade
 velSD     = 5;          % lambda for microsaccade detectionc
 minDur    = 8;          % threshold duration for microsaccades (ms)
 VELTYPE   = 2;          % velocity type for saccade detection
@@ -35,11 +35,12 @@ mergeInt  = 10;         % merge interval for subsequent saccadic events
 
 % target radius for fixation and saccadic eye movements
 tarRad = 2.5;
+tar_ex = 1.4; % multiplier to extend target radius
 
 % Paris
 MO_WIDE   = 1920;            % x resolution
-ABSTAND   = 77;             % subject distance in cm
-MO_PHYS   = 51.5;           % monitor width in cm
+ABSTAND   = 77;              % subject distance in cm
+MO_PHYS   = 51.5;            % monitor width in cm
 scrCen    = [1920, 1200]/2;  % screen center (intial fixation position)
 
 DPP = pix2deg(MO_WIDE,MO_PHYS,ABSTAND,1); % degrees per pixel
@@ -49,7 +50,8 @@ PPD = deg2pix(MO_WIDE,MO_PHYS,ABSTAND,1); % pixels per degree
 pixSixe = 4;
 
 % perform analysis
-anaEyeMovementsFilter;
+% anaEyeMovementsFilter;
+anaEyeMovementsFilter_secondary;
 xcombineData;
 
 % just plot traces
