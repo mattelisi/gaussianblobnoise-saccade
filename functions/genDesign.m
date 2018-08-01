@@ -7,19 +7,37 @@ function design = genDesign(visual,scr, sess, sjnum)
 
 %% display parameters
 % design.eccentricity = [8 9 10 11 12];
-if mod(sjnum,2)
-    if mod(sess,2)
-        design.eccentricity = [10 11 12];
+if sjnum < 13
+    if mod(sjnum,2)
+        if mod(sess,2)
+            design.eccentricity = [10 11 12];
+        else
+            design.eccentricity = [8 9 10];
+        end
     else
-        design.eccentricity = [8 9 10];
+        if mod(sess,2)==0 % revers session order for even sjs number
+            design.eccentricity = [10 11 12];
+        else
+            design.eccentricity = [8 9 10];
+        end
     end
-else
-    if mod(sess,2)==0 % revers session order for even sjs number
-        design.eccentricity = [10 11 12];
+    
+else % extended ecc ranges for subjects n>12
+    if mod(sjnum,2)
+        if mod(sess,2)
+            design.eccentricity = [10 11 12 13];
+        else
+            design.eccentricity = [7 8 9 10];
+        end
     else
-        design.eccentricity = [8 9 10];
+        if mod(sess,2)==0 % revers session order for even sjs number
+            design.eccentricity = [10 11 12 13];
+        else
+            design.eccentricity = [7 8 9 10];
+        end
     end
 end
+
 %% target parameters
 design.min_sigma = 0.3;
 design.sigma_range_deg = [design.min_sigma, 1.5];
